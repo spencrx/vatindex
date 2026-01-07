@@ -1,21 +1,31 @@
 import { NextResponse } from "next/server";
 
+export const runtime = "nodejs";
+
 export async function POST(request: Request) {
   try {
-    const { url, searchResults } = await request.json();
-
-    if (!url || !searchResults) {
-      return NextResponse.json(
-        { error: "URL and search results are required" },
-        { status: 400 }
-      );
+    if (!process.env.GROQ_API_KEY) {
+      console.error("Missing GROQ_API_KEY");
+      return NextResponse.json({ error: "Missing GROQ_API_KEY" }, { status: 500 });
     }
 
-    let parsedResults: unknown;
-    try {
-      parsedResults = JSON.parse(searchResults);
-    } catch {
-      parsedResults = searchResults;
+    const body = await request.json().catch(() => ({}));
+
+    const url: string | undefined = body?.url;
+    const searchResultsInput = body?.searchResults ?? body?.search_results ?? body?.search_results_raw;
+
+    if (!url) {
+      return NextResponse.json({ error: "url is required" }, { status: 400 });
+    }
+
+    // Normalize search results (string JSON -> object, object/array -> keep, missing -> empty)
+    let parsedResults: unknown = searchResultsInput ?? "";
+    if (typeof searchResultsInput === "string") {
+      try {
+        parsedResults = JSON.parse(searchResultsInput);
+      } catch {
+        parsedResults = searchResultsInput; // keep raw string if not JSON
+      }
     }
 
     const prompt = `You are a helpful assistant that writes clear, concise summaries of web content.
@@ -47,9 +57,10 @@ ${JSON.stringify(parsedResults, null, 2)}`;
 
     if (!res.ok) {
       const text = await res.text();
+      console.error("Groq API error:", res.status, text);
       return NextResponse.json(
-        { error: `Groq error: ${text}` },
-        { status: res.status }
+        { error: "Groq request failed", status: res.status, details: text },
+        { status: 502 }
       );
     }
 
@@ -58,9 +69,9 @@ ${JSON.stringify(parsedResults, null, 2)}`;
 
     return NextResponse.json({ overview });
   } catch (error) {
+    console.error("Error generating overview:", error);
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error occurred";
-    console.error("Error generating overview:", errorMessage);
     return NextResponse.json(
       { error: `Failed to generate overview: ${errorMessage}` },
       { status: 500 }
