@@ -48,6 +48,14 @@ type GeneratedContent = {
   error?: string;
 };
 
+// Server-only base URL helper (prevents prod relative-fetch bugs)
+function getServerBaseUrl() {
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
+  );
+}
+
 // Category Actions
 export async function createCategory(
   prevState: ActionState | null,
@@ -406,7 +414,9 @@ export async function bulkUploadBookmarks(
 
     return {
       success: true,
-      message: `Successfully imported ${successCount} bookmarks. ${errorCount > 0 ? `Failed to import ${errorCount} URLs.` : ""}`,
+      message: `Successfully imported ${successCount} bookmarks. ${
+        errorCount > 0 ? `Failed to import ${errorCount} URLs.` : ""
+      }`,
       progress: {
         current: urlList.length,
         total: urlList.length,
@@ -435,22 +445,17 @@ export async function scrapeUrl(
     const url = formData.url;
     if (!url) return { error: "URL is required" };
 
-    // Get metadata from our API
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NODE_ENV === "development"
-        ? "http://localhost:3000"
-        : "";
+    const baseUrl = getServerBaseUrl();
 
     const metadataResponse = await fetch(
       `${baseUrl}/api/metadata?url=${encodeURIComponent(url)}`,
-      {
-        method: "GET",
-      },
+      { method: "GET", cache: "no-store" },
     );
 
     if (!metadataResponse.ok) {
-      throw new Error("Failed to fetch metadata");
+      const text = await metadataResponse.text();
+      console.error("Metadata API failed:", metadataResponse.status, text);
+      throw new Error(`Failed to fetch metadata (${metadataResponse.status})`);
     }
 
     const metadata = await metadataResponse.json();
@@ -469,6 +474,8 @@ export async function scrapeUrl(
     });
 
     if (!exaResponse.ok) {
+      const text = await exaResponse.text();
+      console.error("Exa search failed:", exaResponse.status, text);
       throw new Error("Failed to fetch search results from Exa");
     }
 
@@ -500,60 +507,52 @@ export async function generateContent(url: string): Promise<GeneratedContent> {
       throw new Error("URL is required");
     }
 
-    // Get the base URL for the API
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NEXT_PUBLIC_SITE_URL // Add support for custom domain
-      ? process.env.NEXT_PUBLIC_SITE_URL
-      : process.env.NODE_ENV === "development"
-        ? "http://localhost:3000"
-        : ""; // Empty string will make the fetch relative to current origin
+    const baseUrl = getServerBaseUrl();
 
-    // Use relative URL if baseUrl is empty (will use current origin)
-    const metadataUrl = baseUrl
-      ? `${baseUrl}/api/metadata?url=${encodeURIComponent(url)}`
-      : `/api/metadata?url=${encodeURIComponent(url)}`;
-
-    // First, fetch metadata from our API
-    const metadataResponse = await fetch(metadataUrl, {
-      method: "GET",
-    });
+    // 1) Fetch metadata from our API
+    const metadataResponse = await fetch(
+      `${baseUrl}/api/metadata?url=${encodeURIComponent(url)}`,
+      { method: "GET", cache: "no-store" },
+    );
 
     if (!metadataResponse.ok) {
-      const errorData = await metadataResponse.json().catch(() => ({}));
-      throw new Error(errorData.error || "Failed to fetch metadata");
+      const text = await metadataResponse.text();
+      console.error("Metadata fetch failed:", metadataResponse.status, text);
+      throw new Error(`Failed to fetch metadata (${metadataResponse.status})`);
     }
 
     const metadata = await metadataResponse.json();
-    console.log("API metadata:", metadata);
 
-    // Get search results using Exa
+    // 2) Get search results using Exa
+    if (!process.env.EXASEARCH_API_KEY) {
+      throw new Error("Missing EXASEARCH_API_KEY");
+    }
+
     const exa = new Exa(process.env.EXASEARCH_API_KEY as string);
     const searchResults = await exa.getContents([url], {
       text: true,
       livecrawl: "fallback",
     });
 
-    console.log("Exa search results:", searchResults);
-
-    // Generate overview using Claude
+    // 3) Generate overview via your Groq-backed route
     const overviewResponse = await fetch(`${baseUrl}/api/generate`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        url: url,
+        url,
         searchResults: JSON.stringify(searchResults),
       }),
     });
 
     if (!overviewResponse.ok) {
-      throw new Error("Failed to generate overview");
+      const text = await overviewResponse.text();
+      console.error("Generate overview failed:", overviewResponse.status, text);
+      throw new Error(`Failed to generate overview (${overviewResponse.status})`);
     }
 
     const overviewData = await overviewResponse.json();
-    console.log("Generated overview:", overviewData);
 
     // Generate a slug from the title
     const slug = generateSlug(metadata.title || "");
@@ -566,14 +565,14 @@ export async function generateContent(url: string): Promise<GeneratedContent> {
       search_results: JSON.stringify(searchResults),
       favicon: metadata.favicon || "",
       ogImage: metadata.ogImage || "",
-      slug: slug,
+      slug,
     };
   } catch (error) {
     console.error("Error generating content:", error);
     return {
       title: "",
       description: "",
-      url: url,
+      url,
       overview: "",
       search_results: "",
       favicon: "",
