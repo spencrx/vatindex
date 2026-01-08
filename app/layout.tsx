@@ -23,7 +23,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-import { Mail } from "lucide-react";
+import { Plus } from "lucide-react";
 
 const font = Font({
   subsets: ["latin"],
@@ -69,10 +69,10 @@ const Header = () => {
             src={Logo}
             alt="Design Engineer Logo"
             width={128}
-            height={52.90}
+            height={52.9}
           />
         </Link>
-        <Subscribe />
+        <AddListing />
       </Container>
     </header>
   );
@@ -82,54 +82,29 @@ const Footer = () => {
   return (
     <footer>
       <Container className="flex items-center justify-between gap-3">
-        <div className="grid gap-1 text-xs text-muted-foreground">
-          <p>
-            © {new Date().getFullYear()} {directory.name}.
-          </p>
-          <p>
-            Created at{" "}
-            <a
-              className="underline transition-all hover:text-foreground"
-              href="https://9d8.dev"
-            >
-              9d8
-            </a>{" "}
-            by{" "}
-            <a
-              className="underline transition-all hover:text-foreground"
-              href="https://bridger.to"
-            >
-              Bridger
-            </a>{" "}
-            and{" "}
-            <a
-              className="underline transition-all hover:text-foreground"
-              href="https://cameron.so"
-            >
-              Cameron
-            </a>
-            .
-          </p>
-        </div>
+        <p className="text-xs text-muted-foreground">
+          Built with ❤️ by a human.
+        </p>
         <ThemeToggle />
       </Container>
     </footer>
   );
 };
 
-const Subscribe = () => {
+const AddListing = () => {
   return (
     <Dialog>
       <DialogTrigger asChild>
         <Button size="sm" className="flex items-center">
-          <Mail className="mr-2 h-3 w-3" /> Subscribe
+          <Plus className="mr-2 h-3 w-3" />
+          Add listing
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Subscribe for more resources</DialogTitle>
+          <DialogTitle>Add your VAT accounting service</DialogTitle>
           <DialogDescription>
-            Get notified when new resources are added.
+            Leave your email and we’ll reach out with next steps.
           </DialogDescription>
         </DialogHeader>
         <EmailForm />
