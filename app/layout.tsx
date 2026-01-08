@@ -23,7 +23,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-import { Heart } from "lucide-react";
+import { Plus } from "lucide-react";
 
 const font = Font({
   subsets: ["latin"],
@@ -67,7 +67,7 @@ const Header = () => {
         <Link href="/" className="transition-all hover:opacity-80">
           <Image
             src={Logo}
-            alt={`${directory.name} logo`}
+            alt="VATindex Logo"
             width={128}
             height={52.9}
           />
@@ -83,7 +83,7 @@ const Footer = () => {
     <footer>
       <Container className="flex items-center justify-between gap-3">
         <p className="text-xs text-muted-foreground">
-          © {new Date().getFullYear()} {directory.VATindex} · Built with ❤️ by a human
+          © {new Date().getFullYear()} VATindex · Built with ❤️ by a human
         </p>
         <ThemeToggle />
       </Container>
@@ -96,14 +96,14 @@ const AddListing = () => {
     <Dialog>
       <DialogTrigger asChild>
         <Button size="sm" className="flex items-center">
-          <Heart className="mr-2 h-3 w-3" /> Add listing
+          <Plus className="mr-2 h-3 w-3" /> Add listing
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add your listing</DialogTitle>
           <DialogDescription>
-            Leave your email and I’ll get in touch.
+            Leave your email and I’ll get back to you.
           </DialogDescription>
         </DialogHeader>
         <EmailForm />
