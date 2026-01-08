@@ -49,12 +49,12 @@ export default async function Home({
           <div className="mx-auto max-w-2xl space-y-8 text-center">
             <h1>
               <Balancer>
-                Get the latest resources sent to your inbox weekly
+                Find and compare VAT accountants for your startup
               </Balancer>
             </h1>
             <EmailForm />
             <p className="text-sm text-muted-foreground">
-              Join 1,998+ developers · Unsubscribe anytime
+              Join 1,998+ founders · Unsubscribe anytime
             </p>
           </div>
 
