@@ -85,25 +85,9 @@ export const CategoryFilter = ({ categories }: CategoryFilterProps) => {
   }, SEARCH_DEBOUNCE_MS);
 
   return (
-    <div className="my-12 flex items-center justify-between space-y-2">
-      <div className="flex items-center gap-2">
-        <SearchInput
-          defaultValue={searchParams.get("search") ?? ""}
-          onChange={handleSearch}
-          isPending={isPending}
-        />
-        <Button
-          variant={currentCategory === null ? "default" : "outline"}
-          size="sm"
-          onClick={() => handleCategoryClick(null)}
-          className="min-w-[60px]"
-          aria-pressed={currentCategory === null}
-        >
-          All
-        </Button>
-      </div>
+    <div className="my-12 flex flex-col gap-4">
       <div
-        className="!mt-0 flex flex-wrap gap-2"
+        className="flex flex-wrap gap-2"
         role="group"
         aria-label="Category filters"
       >
@@ -123,6 +107,23 @@ export const CategoryFilter = ({ categories }: CategoryFilterProps) => {
             {category.name}
           </Button>
         ))}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <SearchInput
+          defaultValue={searchParams.get("search") ?? ""}
+          onChange={handleSearch}
+          isPending={isPending}
+        />
+        <Button
+          variant={currentCategory === null ? "default" : "outline"}
+          size="sm"
+          onClick={() => handleCategoryClick(null)}
+          className="min-w-[60px]"
+          aria-pressed={currentCategory === null}
+        >
+          All
+        </Button>
       </div>
     </div>
   );
