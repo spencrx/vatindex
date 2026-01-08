@@ -443,7 +443,7 @@ export async function scrapeUrl(
         : "";
 
     const metadataResponse = await fetch(
-      `${baseUrl}/api/metadata?url=${encodeURIComponent(url)}`,
+      `/api/metadata?url=${encodeURIComponent(url)}`,
       {
         method: "GET",
       },
@@ -515,9 +515,12 @@ export async function generateContent(url: string): Promise<GeneratedContent> {
       : `/api/metadata?url=${encodeURIComponent(url)}`;
 
     // First, fetch metadata from our API
-    const metadataResponse = await fetch(metadataUrl, {
-      method: "GET",
-    });
+    const metadataResponse = await fetch(
+      `/api/metadata?url=${encodeURIComponent(url)}`,
+      {
+        method: "GET",
+      },
+    );
 
     if (!metadataResponse.ok) {
       const errorData = await metadataResponse.json().catch(() => ({}));
@@ -537,7 +540,7 @@ export async function generateContent(url: string): Promise<GeneratedContent> {
     console.log("Exa search results:", searchResults);
 
     // Generate overview using Claude
-    const overviewResponse = await fetch(`${baseUrl}/api/generate`, {
+    const overviewResponse = await fetch(`/api/generate`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
