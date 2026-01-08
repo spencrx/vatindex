@@ -83,7 +83,7 @@ const Footer = () => {
     <footer>
       <Container className="flex items-center justify-between gap-3">
         <p className="text-xs text-muted-foreground">
-          © {new Date().getFullYear()} {directory.name} · Created with ❤️ by a human
+          © {new Date().getFullYear()} {directory.name} · Built with ❤️ by a human
         </p>
         <ThemeToggle />
       </Container>
