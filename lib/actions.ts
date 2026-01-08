@@ -166,7 +166,7 @@ export async function deleteCategory(
     return { success: true };
   } catch (err) {
     console.error("Error deleting category:", err);
-    return { error: "Failed to delete category" };
+    return { error: "Failed to create category" };
   }
 }
 
@@ -460,11 +460,27 @@ export async function scrapeUrl(
       },
     );
 
+    const metadataText = await metadataResponse.text();
+
     if (!metadataResponse.ok) {
-      throw new Error("Failed to fetch metadata");
+      console.error(
+        "Metadata fetch failed (scrapeUrl):",
+        metadataResponse.status,
+        metadataText.slice(0, 500),
+      );
+      throw new Error(`Failed to fetch metadata (${metadataResponse.status})`);
     }
 
-    const metadata = await metadataResponse.json();
+    let metadata: any;
+    try {
+      metadata = JSON.parse(metadataText);
+    } catch {
+      console.error(
+        "Metadata returned non-JSON (scrapeUrl):",
+        metadataText.slice(0, 500),
+      );
+      throw new Error("Metadata returned non-JSON response");
+    }
 
     // Get search results using Exa API
     const exaResponse = await fetch("https://api.exa.ai/search", {
@@ -535,12 +551,28 @@ export async function generateContent(url: string): Promise<GeneratedContent> {
       },
     );
 
+    const metadataText = await metadataResponse.text();
+
     if (!metadataResponse.ok) {
-      const errorData = await metadataResponse.json().catch(() => ({}));
-      throw new Error(errorData.error || "Failed to fetch metadata");
+      console.error(
+        "Metadata fetch failed (generateContent):",
+        metadataResponse.status,
+        metadataText.slice(0, 500),
+      );
+      throw new Error(`Failed to fetch metadata (${metadataResponse.status})`);
     }
 
-    const metadata = await metadataResponse.json();
+    let metadata: any;
+    try {
+      metadata = JSON.parse(metadataText);
+    } catch {
+      console.error(
+        "Metadata returned non-JSON (generateContent):",
+        metadataText.slice(0, 500),
+      );
+      throw new Error("Metadata returned non-JSON response");
+    }
+
     console.log("API metadata:", metadata);
 
     // Get search results using Exa
@@ -564,11 +596,28 @@ export async function generateContent(url: string): Promise<GeneratedContent> {
       }),
     });
 
+    const overviewText = await overviewResponse.text();
+
     if (!overviewResponse.ok) {
-      throw new Error("Failed to generate overview");
+      console.error(
+        "Generate fetch failed (generateContent):",
+        overviewResponse.status,
+        overviewText.slice(0, 500),
+      );
+      throw new Error(`Failed to generate overview (${overviewResponse.status})`);
     }
 
-    const overviewData = await overviewResponse.json();
+    let overviewData: any;
+    try {
+      overviewData = JSON.parse(overviewText);
+    } catch {
+      console.error(
+        "Generate returned non-JSON (generateContent):",
+        overviewText.slice(0, 500),
+      );
+      throw new Error("Generate returned non-JSON response");
+    }
+
     console.log("Generated overview:", overviewData);
 
     // Generate a slug from the title
