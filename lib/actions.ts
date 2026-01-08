@@ -6,6 +6,15 @@ import { generateSlug } from "@/lib/utils";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import Exa from "exa-js";
+import { headers } from "next/headers";
+
+function getOriginFromHeaders() {
+  const h = headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  const proto = h.get("x-forwarded-proto") ?? "https";
+  if (!host) throw new Error("Missing host header");
+  return `${proto}://${host}`;
+}
 
 export type ActionState = {
   success?: boolean;
@@ -435,6 +444,8 @@ export async function scrapeUrl(
     const url = formData.url;
     if (!url) return { error: "URL is required" };
 
+    const origin = getOriginFromHeaders();
+
     // Get metadata from our API
     const baseUrl = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
@@ -443,7 +454,7 @@ export async function scrapeUrl(
         : "";
 
     const metadataResponse = await fetch(
-      `/api/metadata?url=${encodeURIComponent(url)}`,
+      `${origin}/api/metadata?url=${encodeURIComponent(url)}`,
       {
         method: "GET",
       },
@@ -500,6 +511,8 @@ export async function generateContent(url: string): Promise<GeneratedContent> {
       throw new Error("URL is required");
     }
 
+    const origin = getOriginFromHeaders();
+
     // Get the base URL for the API
     const baseUrl = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
@@ -516,7 +529,7 @@ export async function generateContent(url: string): Promise<GeneratedContent> {
 
     // First, fetch metadata from our API
     const metadataResponse = await fetch(
-      `/api/metadata?url=${encodeURIComponent(url)}`,
+      `${origin}/api/metadata?url=${encodeURIComponent(url)}`,
       {
         method: "GET",
       },
@@ -540,7 +553,7 @@ export async function generateContent(url: string): Promise<GeneratedContent> {
     console.log("Exa search results:", searchResults);
 
     // Generate overview using Claude
-    const overviewResponse = await fetch(`/api/generate`, {
+    const overviewResponse = await fetch(`${origin}/api/generate`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
