@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/react";
 import Image from "next/image";
 import Link from "next/link";
-import Logo from "@/public/logo.svg";
+import Logo from "@/public/logo.png";
 import "./globals.css";
 import { Manrope as Font } from "next/font/google";
 
