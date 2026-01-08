@@ -446,18 +446,9 @@ export async function scrapeUrl(
 
     const origin = getOriginFromHeaders();
 
-    // Get metadata from our API
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NODE_ENV === "development"
-        ? "http://localhost:3000"
-        : "";
-
     const metadataResponse = await fetch(
       `${origin}/api/metadata?url=${encodeURIComponent(url)}`,
-      {
-        method: "GET",
-      },
+      { method: "GET" },
     );
 
     const metadataText = await metadataResponse.text();
@@ -468,38 +459,57 @@ export async function scrapeUrl(
         metadataResponse.status,
         metadataText.slice(0, 500),
       );
-      throw new Error(`Failed to fetch metadata (${metadataResponse.status})`);
+      // Best-effort: continue without metadata
     }
 
-    let metadata: any;
+    let metadata: any = {
+      title: "",
+      description: "",
+      favicon: "",
+      ogImage: "",
+      url,
+    };
+
+    if (metadataResponse.ok) {
+      try {
+        metadata = JSON.parse(metadataText);
+      } catch {
+        console.error(
+          "Metadata returned non-JSON (scrapeUrl):",
+          metadataText.slice(0, 500),
+        );
+        // Best-effort: keep fallback metadata
+      }
+    }
+
+    // Get search results using Exa API (optional if key exists)
+    let searchResults: any = null;
     try {
-      metadata = JSON.parse(metadataText);
-    } catch {
-      console.error(
-        "Metadata returned non-JSON (scrapeUrl):",
-        metadataText.slice(0, 500),
-      );
-      throw new Error("Metadata returned non-JSON response");
+      const exaResponse = await fetch("https://api.exa.ai/search", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.EXASEARCH_API_KEY}`,
+        },
+        body: JSON.stringify({
+          query: url,
+          num_results: 5,
+        }),
+      });
+
+      if (!exaResponse.ok) {
+        const t = await exaResponse.text();
+        console.error(
+          "Exa search failed (scrapeUrl):",
+          exaResponse.status,
+          t.slice(0, 500),
+        );
+      } else {
+        searchResults = await exaResponse.json();
+      }
+    } catch (e) {
+      console.error("Exa search exception (scrapeUrl):", e);
     }
-
-    // Get search results using Exa API
-    const exaResponse = await fetch("https://api.exa.ai/search", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.EXASEARCH_API_KEY}`,
-      },
-      body: JSON.stringify({
-        query: url,
-        num_results: 5,
-      }),
-    });
-
-    if (!exaResponse.ok) {
-      throw new Error("Failed to fetch search results from Exa");
-    }
-
-    const searchResults = await exaResponse.json();
 
     return {
       success: true,
@@ -509,7 +519,7 @@ export async function scrapeUrl(
         favicon: metadata.favicon || "",
         ogImage: metadata.ogImage || "",
         url: metadata.url || url,
-        search_results: JSON.stringify(searchResults),
+        search_results: searchResults ? JSON.stringify(searchResults) : "",
       },
     };
   } catch (error) {
@@ -529,70 +539,72 @@ export async function generateContent(url: string): Promise<GeneratedContent> {
 
     const origin = getOriginFromHeaders();
 
-    // Get the base URL for the API
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NEXT_PUBLIC_SITE_URL // Add support for custom domain
-      ? process.env.NEXT_PUBLIC_SITE_URL
-      : process.env.NODE_ENV === "development"
-        ? "http://localhost:3000"
-        : ""; // Empty string will make the fetch relative to current origin
+    // ---- Metadata (BEST EFFORT) ----
+    let metadata: any = {
+      title: "",
+      description: "",
+      favicon: "",
+      ogImage: "",
+      url,
+    };
 
-    // Use relative URL if baseUrl is empty (will use current origin)
-    const metadataUrl = baseUrl
-      ? `${baseUrl}/api/metadata?url=${encodeURIComponent(url)}`
-      : `/api/metadata?url=${encodeURIComponent(url)}`;
-
-    // First, fetch metadata from our API
-    const metadataResponse = await fetch(
-      `${origin}/api/metadata?url=${encodeURIComponent(url)}`,
-      {
-        method: "GET",
-      },
-    );
-
-    const metadataText = await metadataResponse.text();
-
-    if (!metadataResponse.ok) {
-      console.error(
-        "Metadata fetch failed (generateContent):",
-        metadataResponse.status,
-        metadataText.slice(0, 500),
-      );
-      throw new Error(`Failed to fetch metadata (${metadataResponse.status})`);
-    }
-
-    let metadata: any;
     try {
-      metadata = JSON.parse(metadataText);
-    } catch {
-      console.error(
-        "Metadata returned non-JSON (generateContent):",
-        metadataText.slice(0, 500),
+      const metadataResponse = await fetch(
+        `${origin}/api/metadata?url=${encodeURIComponent(url)}`,
+        { method: "GET" },
       );
-      throw new Error("Metadata returned non-JSON response");
+
+      const metadataText = await metadataResponse.text();
+
+      if (!metadataResponse.ok) {
+        console.error(
+          "Metadata fetch failed (generateContent):",
+          metadataResponse.status,
+          metadataText.slice(0, 500),
+        );
+        // DO NOT throw — continue
+      } else {
+        try {
+          metadata = JSON.parse(metadataText);
+        } catch {
+          console.error(
+            "Metadata returned non-JSON (generateContent):",
+            metadataText.slice(0, 500),
+          );
+          // continue with fallback metadata
+        }
+      }
+    } catch (e) {
+      console.error("Metadata fetch exception (generateContent):", e);
+      // continue with fallback metadata
     }
 
-    console.log("API metadata:", metadata);
+    // ---- Exa contents (BEST EFFORT) ----
+    let searchResults: any = null;
+    try {
+      const exaKey = process.env.EXASEARCH_API_KEY as string | undefined;
+      if (exaKey) {
+        const exa = new Exa(exaKey);
+        searchResults = await exa.getContents([url], {
+          text: true,
+          livecrawl: "fallback",
+        });
+      } else {
+        console.error("Missing EXASEARCH_API_KEY (generateContent)");
+      }
+    } catch (e) {
+      console.error("Exa getContents failed (generateContent):", e);
+    }
 
-    // Get search results using Exa
-    const exa = new Exa(process.env.EXASEARCH_API_KEY as string);
-    const searchResults = await exa.getContents([url], {
-      text: true,
-      livecrawl: "fallback",
-    });
-
-    console.log("Exa search results:", searchResults);
-
-    // Generate overview using Claude
+    // ---- Generate overview (Groq route) ----
     const overviewResponse = await fetch(`${origin}/api/generate`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        url: url,
-        searchResults: JSON.stringify(searchResults),
+        url,
+        searchResults: JSON.stringify(searchResults ?? { url }),
       }),
     });
 
@@ -618,20 +630,27 @@ export async function generateContent(url: string): Promise<GeneratedContent> {
       throw new Error("Generate returned non-JSON response");
     }
 
-    console.log("Generated overview:", overviewData);
+    const titleForSlug =
+      (metadata?.title && String(metadata.title).trim()) ||
+      (() => {
+        try {
+          return new URL(url).hostname;
+        } catch {
+          return url;
+        }
+      })();
 
-    // Generate a slug from the title
-    const slug = generateSlug(metadata.title || "");
+    const slug = generateSlug(titleForSlug);
 
     return {
       title: metadata.title || "",
       description: metadata.description || "",
       url: metadata.url || url,
       overview: overviewData.overview || "",
-      search_results: JSON.stringify(searchResults),
+      search_results: JSON.stringify(searchResults ?? ""),
       favicon: metadata.favicon || "",
       ogImage: metadata.ogImage || "",
-      slug: slug,
+      slug,
     };
   } catch (error) {
     console.error("Error generating content:", error);
