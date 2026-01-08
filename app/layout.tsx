@@ -101,9 +101,9 @@ const AddListing = () => {
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add your listing</DialogTitle>
+          <DialogTitle>Add your VAT accounting service</DialogTitle>
           <DialogDescription>
-            Leave your email and I’ll get back to you.
+            Leave your email and we’ll reach out with next steps.
           </DialogDescription>
         </DialogHeader>
         <EmailForm />
