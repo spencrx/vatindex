@@ -68,8 +68,8 @@ const Header = () => {
           <Image
             src={Logo}
             alt="Design Engineer Logo"
-            width={288}
-            height={119.04}
+            width={192}
+            height={79.36}
           />
         </Link>
         <Subscribe />
