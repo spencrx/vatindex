@@ -65,14 +65,15 @@ const Header = () => {
     <header>
       <Container className="flex items-start justify-between gap-3">
         <Link href="/" className="transition-all hover:opacity-80">
-          <Image
-            src={Logo}
-            alt="VATindex Logo"
-            width={128}
-            height={52.9}
-          />
+          <Image src={Logo} alt="VATindex Logo" width={128} height={52.9} />
         </Link>
-        <AddListing />
+
+        <div className="flex items-center gap-2">
+          <Button asChild size="sm" variant="ghost">
+            <Link href="/blog">Blog</Link>
+          </Button>
+          <AddListing />
+        </div>
       </Container>
     </header>
   );
