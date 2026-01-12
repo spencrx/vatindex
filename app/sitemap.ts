@@ -1,5 +1,6 @@
 import { MetadataRoute } from "next";
 import { getAllBookmarks } from "@/lib/data";
+import { getAllPosts } from "@/lib/blog";
 import { directory } from "@/directory.config";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -8,6 +9,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Fetch all bookmarks
   const bookmarks = await getAllBookmarks();
 
+  // Fetch all blog posts
+  const posts = getAllPosts();
+
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [
     {
@@ -15,6 +19,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 1,
+    },
+    {
+      url: `${baseUrl}/blog`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.8,
     },
   ];
 
@@ -26,5 +36,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...staticPages, ...dynamicPages];
+  // Blog post pages
+  const blogPages: MetadataRoute.Sitemap = posts.map((post) => ({
+    url: `${baseUrl}/blog/${post.slug}`,
+    lastModified: new Date(post.date),
+    changeFrequency: "monthly",
+    priority: 0.7,
+  }));
+
+  return [...staticPages, ...dynamicPages, ...blogPages];
 }
