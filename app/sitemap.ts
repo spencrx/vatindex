@@ -3,6 +3,12 @@ import { getAllBookmarks } from "@/lib/data";
 import { getAllPosts } from "@/lib/blog";
 import { directory } from "@/directory.config";
 
+function safeDate(input: unknown): Date {
+  if (!input) return new Date();
+  const d = new Date(String(input));
+  return Number.isNaN(d.getTime()) ? new Date() : d;
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = directory.baseUrl;
 
@@ -39,7 +45,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Blog post pages
   const blogPages: MetadataRoute.Sitemap = posts.map((post) => ({
     url: `${baseUrl}/blog/${post.slug}`,
-    lastModified: new Date(post.date),
+    lastModified: safeDate((post as any).date),
     changeFrequency: "monthly",
     priority: 0.7,
   }));
