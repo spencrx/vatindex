@@ -75,8 +75,18 @@ const Header = () => {
             variant="secondary"
             className="shadow-sm transition hover:shadow-md active:scale-[0.98]"
           >
+            <Link href="/">Directory</Link>
+          </Button>
+
+          <Button
+            asChild
+            size="sm"
+            variant="secondary"
+            className="shadow-sm transition hover:shadow-md active:scale-[0.98]"
+          >
             <Link href="/blog">Blog</Link>
           </Button>
+
           <AddListing />
         </div>
       </Container>
