@@ -90,9 +90,7 @@ export default async function Page({ params }: Props) {
               <img
                 src={bookmark.ogImage}
                 alt="Open Graph preview"
-                width={300}
-                height={200}
-                className="rounded-lg object-cover"
+                className="h-full w-full object-cover"
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center">
