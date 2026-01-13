@@ -35,7 +35,7 @@ export default function BlogIndexPage() {
           <div className="mx-auto max-w-2xl space-y-6">
             <h1>Blog</h1>
             <p className="text-muted-foreground">
-              VAT guides for founders. Practical, no fluff.
+              VAT guides for founders.
             </p>
 
             <div className="space-y-4">

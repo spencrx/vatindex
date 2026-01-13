@@ -36,10 +36,29 @@ const mdxComponents = {
 
 type TocItem = { id: string; text: string; level: 2 | 3 };
 
-function formatDate(date: string) {
-  // Expects YYYY-MM-DD
-  const d = new Date(`${date}T00:00:00Z`);
-  if (Number.isNaN(d.getTime())) return date;
+function formatDate(value: unknown) {
+  // Handles Date objects, YYYY-MM-DD strings, and "Sat Jan 10..." strings.
+  let d: Date | null = null;
+
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    d = value;
+  } else if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return "";
+
+    // If YYYY-MM-DD, parse safely as UTC midnight
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      const parsed = new Date(`${trimmed}T00:00:00Z`);
+      if (!Number.isNaN(parsed.getTime())) d = parsed;
+    } else {
+      // Try parsing other date strings (like "Sat Jan 10 2026 ...")
+      const parsed = new Date(trimmed);
+      if (!Number.isNaN(parsed.getTime())) d = parsed;
+    }
+  }
+
+  if (!d) return typeof value === "string" ? value : "";
+
   return new Intl.DateTimeFormat("en-US", {
     year: "numeric",
     month: "short",
@@ -133,7 +152,7 @@ export default async function BlogPostPage({
 
   const title = String(data.title ?? params.slug);
   const description = String(data.description ?? "");
-  const date = String(data.date ?? "");
+  const date = data.date;
 
   const toc = buildTocFromMdx(content);
   const faq = normalizeFaq(data);
