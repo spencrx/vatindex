@@ -8,8 +8,35 @@ export type BlogPostMeta = {
   slug: string;
   title: string;
   description: string;
-  date: string;
+  date: string; // always normalized to YYYY-MM-DD (or "")
 };
+
+function normalizeDate(value: unknown): string {
+  // If frontmatter date is a Date object
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString().slice(0, 10);
+  }
+
+  // If it's a string, try to normalize it
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return "";
+
+    // If already looks like YYYY-MM-DD, keep it
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+
+    // Try parsing other date strings
+    const d = new Date(trimmed);
+    if (!Number.isNaN(d.getTime())) {
+      return d.toISOString().slice(0, 10);
+    }
+
+    // Fallback: return original string (better than empty)
+    return trimmed;
+  }
+
+  return "";
+}
 
 export function getAllPosts(): BlogPostMeta[] {
   if (!fs.existsSync(BLOG_DIR)) return [];
@@ -26,7 +53,7 @@ export function getAllPosts(): BlogPostMeta[] {
       slug,
       title: String(data.title ?? slug),
       description: String(data.description ?? ""),
-      date: String(data.date ?? ""),
+      date: normalizeDate(data.date),
     };
   });
 

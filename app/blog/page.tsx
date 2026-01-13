@@ -7,16 +7,22 @@ export const metadata = {
   description: "VAT guides for founders.",
 };
 
-function formatDate(input: string) {
-  // Handles "2026-01-10" and avoids timezone weirdness by parsing as UTC midnight
-  const d = new Date(`${input}T00:00:00Z`);
-  if (Number.isNaN(d.getTime())) return input;
-  return new Intl.DateTimeFormat("en-US", {
+function formatDate(input: unknown) {
+  // supports Date or "YYYY-MM-DD"
+  const d =
+    input instanceof Date
+      ? input
+      : typeof input === "string"
+        ? new Date(`${input}T00:00:00Z`)
+        : null;
+
+  if (!d || Number.isNaN(d.getTime())) return "";
+
+  return d.toLocaleDateString(undefined, {
     year: "numeric",
     month: "short",
-    day: "2-digit",
-    timeZone: "UTC",
-  }).format(d);
+    day: "numeric",
+  });
 }
 
 export default function BlogIndexPage() {
@@ -39,12 +45,20 @@ export default function BlogIndexPage() {
                   href={`/blog/${post.slug}`}
                   className="block rounded-lg border p-4 transition hover:bg-muted/40"
                 >
-                  <div className="text-sm text-muted-foreground">
-                    {post.date ? formatDate(String(post.date)) : null}
-                  </div>
-                  <div className="text-lg font-semibold">{post.title}</div>
-                  {post.description && (
+                  <div className="flex items-start justify-between gap-4">
                     <div className="text-sm text-muted-foreground">
+                      {formatDate(post.date) || ""}
+                    </div>
+
+                    <div className="text-sm text-muted-foreground underline underline-offset-4">
+                      Read →
+                    </div>
+                  </div>
+
+                  <div className="mt-2 text-lg font-semibold">{post.title}</div>
+
+                  {post.description && (
+                    <div className="mt-1 text-sm text-muted-foreground">
                       {post.description}
                     </div>
                   )}
