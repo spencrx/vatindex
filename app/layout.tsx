@@ -38,18 +38,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
       <body className={`${font.className} antialiased`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <Header />
           {children}
           <Footer />
@@ -97,11 +92,26 @@ const Header = () => {
 const Footer = () => {
   return (
     <footer>
-      <Container className="flex items-center justify-between gap-3">
+      <Container className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <p className="text-xs text-muted-foreground">
           © {new Date().getFullYear()} VATindex · Built with ❤️ by a human
         </p>
-        <ThemeToggle />
+
+        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          <Link href="/about" className="hover:underline">
+            About
+          </Link>
+          <Link href="/privacy" className="hover:underline">
+            Privacy
+          </Link>
+          <Link href="/disclaimer" className="hover:underline">
+            Disclaimer
+          </Link>
+          <Link href="/sitemap.xml" className="hover:underline">
+            Sitemap
+          </Link>
+          <ThemeToggle />
+        </div>
       </Container>
     </footer>
   );
@@ -123,7 +133,6 @@ const AddListing = () => {
           </DialogDescription>
         </DialogHeader>
         <EmailForm />
-        <div className="h-px" />
       </DialogContent>
     </Dialog>
   );
