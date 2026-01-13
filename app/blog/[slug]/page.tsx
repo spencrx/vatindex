@@ -21,13 +21,17 @@ const mdxComponents = {
   a: (props: any) => (
     <a
       {...props}
-      className={`underline underline-offset-4 hover:opacity-80 ${props.className ?? ""}`}
+      className={`underline underline-offset-4 hover:opacity-80 ${
+        props.className ?? ""
+      }`}
       target={props.href?.startsWith("http") ? "_blank" : undefined}
       rel={props.href?.startsWith("http") ? "noreferrer" : undefined}
     />
   ),
   // eslint-disable-next-line @next/next/no-img-element
-  img: (props: any) => <img {...props} className={`rounded-lg ${props.className ?? ""}`} />,
+  img: (props: any) => (
+    <img {...props} className={`rounded-lg ${props.className ?? ""}`} />
+  ),
 };
 
 type TocItem = { id: string; text: string; level: 2 | 3 };
@@ -36,7 +40,12 @@ function formatDate(date: string) {
   // Expects YYYY-MM-DD
   const d = new Date(`${date}T00:00:00Z`);
   if (Number.isNaN(d.getTime())) return date;
-  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  return new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    timeZone: "UTC",
+  }).format(d);
 }
 
 /**
@@ -89,7 +98,11 @@ export async function generateStaticParams() {
   return getAllPosts().map((p) => ({ slug: p.slug }));
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }) {
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}) {
   const raw = getPostSourceBySlug(params.slug);
   if (!raw) return {};
   const { data } = matter(raw);
@@ -108,7 +121,11 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 }
 
-export default async function BlogPostPage({ params }: { params: { slug: string } }) {
+export default async function BlogPostPage({
+  params,
+}: {
+  params: { slug: string };
+}) {
   const raw = getPostSourceBySlug(params.slug);
   if (!raw) return notFound();
 
@@ -143,15 +160,28 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
         <Container>
           <div className="mx-auto max-w-5xl">
             <div className="mb-10">
-              <Link href="/blog" className="text-sm text-muted-foreground hover:underline">
+              <Link
+                href="/blog"
+                className="text-sm text-muted-foreground hover:underline"
+              >
                 ← Back to blog
               </Link>
 
-              <h1 className="mt-4 text-4xl font-semibold tracking-tight">{title}</h1>
+              <h1 className="mt-4 text-4xl font-semibold tracking-tight">
+                {title}
+              </h1>
 
-              {description && <p className="mt-3 max-w-2xl text-muted-foreground">{description}</p>}
+              {description && (
+                <p className="mt-3 max-w-2xl text-muted-foreground">
+                  {description}
+                </p>
+              )}
 
-              {date && <p className="mt-3 text-sm text-muted-foreground">{formatDate(date)}</p>}
+              {date && (
+                <p className="mt-3 text-sm text-muted-foreground">
+                  {formatDate(date)}
+                </p>
+              )}
             </div>
 
             {faqJsonLd && (
@@ -216,7 +246,9 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
                 {/* FAQ (optional via frontmatter) */}
                 {faq.length > 0 && (
                   <section className="mt-12">
-                    <h2 className="text-2xl font-semibold tracking-tight">FAQ</h2>
+                    <h2 className="text-2xl font-semibold tracking-tight">
+                      FAQ
+                    </h2>
                     <p className="mt-2 text-muted-foreground">
                       Quick answers to common questions founders ask.
                     </p>

@@ -57,8 +57,8 @@ export default function RootLayout({
 
 const Header = () => {
   return (
-    <header>
-      <Container className="flex items-start justify-between gap-3">
+    <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur">
+      <Container className="flex items-start justify-between gap-3 py-4">
         <Link href="/" className="transition-all hover:opacity-80">
           <Image src={Logo} alt="VATindex Logo" width={128} height={52.9} />
         </Link>
